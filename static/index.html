@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rutas Puebla</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<!-- VISTA: INICIO -->
+<section id="v-inicio" class="inicio">
+  <div class="formas"><i></i><i></i><i></i><i></i></div>
+  <div class="centro">
+    <h1 class="logo">RUTAS<br>PUEBLA</h1>
+    <p class="lema"></p>
+    <button id="btn-comenzar" class="btn btn-azul grande" type="button">Comenzar</button>
+  </div>
+  <footer class="pie">
+    <strong>Montserrat Hernández Moreno</strong>
+    <span>Optativa Base de Datos Producto 3</span>
+  </footer>
+</section>
+
+<!-- APLICACIÓN -->
+<div id="shell" class="layout hidden">
+
+  <aside class="sidebar">
+    <div class="marca">Rutas<b>Puebla</b></div>
+    <nav class="menu">
+      <small>Principal</small>
+      <button data-nav="dashboard" type="button">Dashboard</button>
+      <button data-nav="mapa" type="button">Mapa de paradas</button>
+      <button data-nav="paradas" type="button">Gestión de paradas</button>
+      <small>Acciones</small>
+      <button data-nav="crear" type="button">Nueva parada</button>
+      <button data-nav="inicio" type="button">Cerrar panel</button>
+    </nav>
+    <div class="perfil">
+      <span class="avatar">MH</span>
+      <div><strong>Montserrat</strong><small>Hernández Moreno</small></div>
+    </div>
+  </aside>
+
+  <div class="principal">
+    <header class="topbar">
+      <button id="btn-atras" class="btn-atras" type="button">&larr; Regresar</button>
+      <h1 id="titulo"></h1>
+      <input id="buscador" class="buscar" type="search" placeholder="Buscar parada, colonia o ruta">
+      <div class="estado-redis"><i id="punto"></i><span id="txt-redis">Conectando</span></div>
+    </header>
+
+    <main class="contenido">
+
+      <!-- DASHBOARD -->
+      <section id="v-dashboard" class="vista hidden">
+        <div class="kpis">
+          <div class="kpi k-azul"><span>Paradas registradas</span><b id="k-total">0</b></div>
+          <div class="kpi k-marino"><span>Paradas activas</span><b id="k-activas">0</b></div>
+          <div class="kpi k-rosa"><span>Paradas inactivas</span><b id="k-inactivas">0</b></div>
+          <div class="kpi k-claro"><span>Rutas distintas</span><b id="k-rutas">0</b></div>
+        </div>
+        <div class="fila-2">
+          <div class="card card-mapa"><h2>Mapa de paradas</h2><div id="mapa-general" class="mapa"></div></div>
+          <div class="card"><h2>Paradas por ruta</h2><div id="barras-dash" class="barras"></div></div>
+        </div>
+        <div class="card">
+          <div class="cabecera"><h2>Paradas recientes</h2>
+            <button class="btn btn-azul chico" data-nav="paradas" type="button">Ver todas</button></div>
+          <div class="tabla-wrap"><table class="tabla">
+            <thead><tr><th>ID</th><th>Nombre</th><th>Colonia</th><th>Rutas</th><th>Estado</th></tr></thead>
+            <tbody id="tb-recientes"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- MAPA -->
+      <section id="v-mapa" class="vista hidden">
+        <div class="mapa-layout">
+          <div class="card card-mapa"><div id="mapa-grande" class="mapa"></div></div>
+          <div class="card panel-lateral">
+            <h2>Paradas en el mapa</h2>
+            <select id="m-estado" class="campo">
+              <option value="">Todas</option>
+              <option value="true">Solo activas</option>
+              <option value="false">Solo inactivas</option>
+            </select>
+            <ul id="lista-mapa" class="lista"></ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- GESTIÓN DE PARADAS -->
+      <section id="v-paradas" class="vista hidden">
+        <div class="card">
+          <div class="cabecera">
+            <h2>Administración de paradas <small>GET /paradas</small></h2>
+            <div class="grupo">
+              <select id="f-estado" class="campo corto">
+                <option value="">Todos los estados</option>
+                <option value="true">Activas</option>
+                <option value="false">Inactivas</option>
+              </select>
+              <button id="btn-nueva" class="btn btn-rosa" type="button">Nueva parada</button>
+            </div>
+          </div>
+          <div class="tabla-wrap"><table class="tabla">
+            <thead><tr><th>ID</th><th>Nombre</th><th>Colonia</th><th>Rutas</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody id="tb-paradas"></tbody></table></div>
+        </div>
+      </section>
+
+      <!-- FORMULARIO -->
+      <section id="v-form" class="vista hidden">
+        <div class="card">
+          <h2><span id="form-txt">Crear parada</span> <small id="form-sub">POST /paradas</small></h2>
+          <form id="form-parada">
+            <input type="hidden" id="parada-id">
+            <div class="cols">
+              <div><label for="nombre">Nombre de la parada</label>
+                <input class="campo" id="nombre" required placeholder="Ej. Parada Zócalo"></div>
+              <div><label for="colonia">Colonia</label>
+                <input class="campo" id="colonia" required placeholder="Ej. Centro"></div>
+              <div><label for="latitud">Latitud</label>
+                <input class="campo" id="latitud" type="number" step="any" required placeholder="19.0431"></div>
+              <div><label for="longitud">Longitud</label>
+                <input class="campo" id="longitud" type="number" step="any" required placeholder="-98.1937"></div>
+              <div><label for="rutas">Rutas (separadas por coma)</label>
+                <input class="campo" id="rutas" placeholder="Ruta 1, Ruta 15, Ruta 72"></div>
+              <div><label for="activa">Estado</label>
+                <select class="campo" id="activa">
+                  <option value="true">Activa</option>
+                  <option value="false">Inactiva</option>
+                </select></div>
+            </div>
+            <div class="botones">
+              <button id="btn-cancelar" class="btn btn-gris" type="button">Cancelar</button>
+              <button id="btn-guardar" class="btn btn-rosa" type="submit">Crear parada</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- DETALLE -->
+      <section id="v-detalle" class="vista hidden">
+        <div class="fila-2">
+          <div class="card">
+            <h2>Detalle de parada <small>GET /paradas/{parada_id}</small></h2>
+            <ul class="datos">
+              <li><span>Nombre</span><b id="d-nombre"></b></li>
+              <li><span>ID</span><b id="d-id"></b></li>
+              <li><span>Colonia</span><b id="d-colonia"></b></li>
+              <li><span>Municipio</span><b id="d-municipio"></b></li>
+              <li><span>Coordenadas</span><b id="d-coords"></b></li>
+              <li><span>Rutas</span><b id="d-rutas"></b></li>
+              <li><span>Estado</span><b id="d-estado"></b></li>
+            </ul>
+            <div class="botones">
+              <button id="btn-editar" class="btn btn-azul" type="button">Editar</button>
+              <button id="btn-eliminar" class="btn btn-rojo" type="button">Eliminar</button>
+            </div>
+          </div>
+          <div class="card card-mapa"><h2>Ubicación</h2><div id="mapa-detalle" class="mapa"></div></div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- MODAL ELIMINAR -->
+<div id="modal" class="modal hidden">
+  <div class="modal-caja">
+    <p>¿Seguro que deseas eliminar esta parada?</p>
+    <div class="botones centrado">
+      <button id="btn-cancelar-del" class="btn btn-gris" type="button">Cancelar</button>
+      <button id="btn-confirmar-del" class="btn btn-rojo" type="button">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="/static/app.js"></script>
+</body>
+</html>
